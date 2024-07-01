@@ -1,144 +1,110 @@
 #include "binary_trees.h"
 
 /**
- * binary_tree_height - Measures the height of a binary tree
- * @tree: Pointer to the root node of the tree to measure the height
- *
- * Return: Height of the tree, 0 if tree is NULL
+ * update_height - Update the height of a node.
+ * @node: Pointer to the node to update.
  */
-size_t binary_tree_height(const binary_tree_t *tree)
+void update_height(avl_t *node)
 {
-    size_t left_height, right_height;
+    size_t height_left = 0, height_right = 0;
 
-    if (tree == NULL)
-        return (0);
-
-    left_height = binary_tree_height(tree->left);
-    right_height = binary_tree_height(tree->right);
-
-    return (1 + (left_height > right_height ? left_height : right_height));
+    if (node->left)
+        height_left = binary_tree_height(node->left) + 1;
+    if (node->right)
+        height_right = binary_tree_height(node->right) + 1;
+    node->height = (height_left > height_right ? height_left : height_right);
 }
 
 /**
- * binary_tree_balance - Measures the balance factor of a binary tree
- * @tree: Pointer to the root node of the tree to measure the balance factor
- *
- * Return: Balance factor of the tree, 0 if tree is NULL
+ * balance_factor - Calculate the balance factor of a node.
+ * @node: Pointer to the node to calculate.
+ * Return: Balance factor of the node.
  */
-int binary_tree_balance(const binary_tree_t *tree)
+int balance_factor(avl_t *node)
 {
-    if (tree == NULL)
-        return (0);
+    int height_left = node->left ? binary_tree_height(node->left) + 1 : 0;
+    int height_right = node->right ? binary_tree_height(node->right) + 1 : 0;
 
-    return (int)binary_tree_height(tree->left) - (int)binary_tree_height(tree->right);
+    return (height_left - height_right);
 }
 
 /**
- * binary_tree_rotate_left - Performs a left-rotation on a binary tree
- * @tree: Pointer to the root node of the tree to rotate
- *
- * Return: Pointer to the new root node of the tree once rotated
+ * balance - Balance the AVL tree.
+ * @tree: Double pointer to the root of the tree.
  */
-binary_tree_t *binary_tree_rotate_left(binary_tree_t *tree)
+void balance(avl_t **tree)
 {
-    binary_tree_t *new_root;
+    int balance;
 
-    if (tree == NULL || tree->right == NULL)
-        return (tree);
+    update_height(*tree);
+    balance = balance_factor(*tree);
 
-    new_root = tree->right;
-    tree->right = new_root->left;
-    if (new_root->left)
-        new_root->left->parent = tree;
-    new_root->left = tree;
-    new_root->parent = tree->parent;
-    tree->parent = new_root;
-
-    return (new_root);
+    if (balance > 1)
+    {
+        if (balance_factor((*tree)->left) < 0)
+            (*tree)->left = binary_tree_rotate_left((*tree)->left);
+        *tree = binary_tree_rotate_right(*tree);
+    }
+    else if (balance < -1)
+    {
+        if (balance_factor((*tree)->right) > 0)
+            (*tree)->right = binary_tree_rotate_right((*tree)->right);
+        *tree = binary_tree_rotate_left(*tree);
+    }
 }
 
 /**
- * binary_tree_rotate_right - Performs a right-rotation on a binary tree
- * @tree: Pointer to the root node of the tree to rotate
- *
- * Return: Pointer to the new root node of the tree once rotated
+ * bst_insert - Inserts a value in a BST
+ * @tree: Double pointer to the root node of the tree to insert the value
+ * @value: Value to insert in the node
+ * Return: Pointer to the created node, or NULL on failure
  */
-binary_tree_t *binary_tree_rotate_right(binary_tree_t *tree)
+bst_t *bst_insert(bst_t **tree, int value)
 {
-    binary_tree_t *new_root;
+    if (*tree == NULL)
+        return (*tree = binary_tree_node(NULL, value));
 
-    if (tree == NULL || tree->left == NULL)
-        return (tree);
-
-    new_root = tree->left;
-    tree->left = new_root->right;
-    if (new_root->right)
-        new_root->right->parent = tree;
-    new_root->right = tree;
-    new_root->parent = tree->parent;
-    tree->parent = new_root;
-
-    return (new_root);
+    if (value < (*tree)->n)
+    {
+        if ((*tree)->left == NULL)
+        {
+            (*tree)->left = binary_tree_node(*tree, value);
+            return ((*tree)->left);
+        }
+        return (bst_insert(&((*tree)->left), value));
+    }
+    else if (value > (*tree)->n)
+    {
+        if ((*tree)->right == NULL)
+        {
+            (*tree)->right = binary_tree_node(*tree, value);
+            return ((*tree)->right);
+        }
+        return (bst_insert(&((*tree)->right), value));
+    }
+    return (NULL);
 }
 
 /**
  * avl_insert - Inserts a value in an AVL Tree
  * @tree: Double pointer to the root node of the AVL tree to insert the value
- * @value: Value to insert in the AVL tree
- *
+ * @value: Value to insert in the node
  * Return: Pointer to the created node, or NULL on failure
  */
 avl_t *avl_insert(avl_t **tree, int value)
 {
-    avl_t *node = NULL;
+    avl_t *node;
 
     if (tree == NULL)
         return (NULL);
 
-    if (*tree == NULL)
+    node = bst_insert(tree, value);
+    while (node != NULL)
     {
-        *tree = binary_tree_node(NULL, value);
-        return (*tree);
-    }
-
-    if (value < (*tree)->n)
-    {
-        node = avl_insert(&((*tree)->left), value);
-        (*tree)->left->parent = *tree;
-    }
-    else if (value > (*tree)->n)
-    {
-        node = avl_insert(&((*tree)->right), value);
-        (*tree)->right->parent = *tree;
-    }
-    else
-    {
-        return (NULL);  // Value already exists in the tree
-    }
-
-    // Update height and balance the tree
-    int balance = binary_tree_balance(*tree);
-
-    // Left Left Case
-    if (balance > 1 && value < (*tree)->left->n)
-        return binary_tree_rotate_right(*tree);
-
-    // Right Right Case
-    if (balance < -1 && value > (*tree)->right->n)
-        return binary_tree_rotate_left(*tree);
-
-    // Left Right Case
-    if (balance > 1 && value > (*tree)->left->n)
-    {
-        (*tree)->left = binary_tree_rotate_left((*tree)->left);
-        return binary_tree_rotate_right(*tree);
-    }
-
-    // Right Left Case
-    if (balance < -1 && value < (*tree)->right->n)
-    {
-        (*tree)->right = binary_tree_rotate_right((*tree)->right);
-        return binary_tree_rotate_left(*tree);
+        balance(&node);
+        if (node->parent == NULL)
+            *tree = node;
+        node = node->parent;
     }
 
     return (node);

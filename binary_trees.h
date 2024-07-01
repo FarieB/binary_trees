@@ -13,6 +13,7 @@
  * @parent: Pointer to the parent node
  * @left: Pointer to the left child node
  * @right: Pointer to the right child node
+ * @height: Height of the node
  */
 struct binary_tree_s
 {
@@ -20,6 +21,7 @@ struct binary_tree_s
     struct binary_tree_s *parent;
     struct binary_tree_s *left;
     struct binary_tree_s *right;
+    int height;
 };
 
 typedef struct binary_tree_s binary_tree_t;
@@ -34,8 +36,8 @@ typedef struct binary_tree_s heap_t;
  */
 typedef struct levelorder_queue_s
 {
-	binary_tree_t *node;
-	struct levelorder_queue_s *next;
+    binary_tree_t *node;
+    struct levelorder_queue_s *next;
 } levelorder_queue_t;
 
 /* Printing helper function */
@@ -60,8 +62,7 @@ int binary_tree_is_full(const binary_tree_t *tree);
 int binary_tree_is_perfect(const binary_tree_t *tree);
 binary_tree_t *binary_tree_sibling(binary_tree_t *node);
 binary_tree_t *binary_tree_uncle(binary_tree_t *node);
-binary_tree_t *binary_trees_ancestor(const binary_tree_t *first, 
-	const binary_tree_t *second);
+binary_tree_t *binary_trees_ancestor(const binary_tree_t *first, const binary_tree_t *second);
 void binary_tree_levelorder(const binary_tree_t *tree, void (*func)(int));
 int binary_tree_is_complete(const binary_tree_t *tree);
 binary_tree_t *binary_tree_rotate_left(binary_tree_t *tree);
